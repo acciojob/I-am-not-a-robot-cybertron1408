@@ -5,14 +5,203 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>I'm not a robot</title>
-    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .img1 {
+        content: url("https://picsum.photos/id/237/200/300");
+      }
+      .img2 {
+        content: url("https://picsum.photos/seed/picsum/200/300");
+      }
+      .img3 {
+        content: url("https://picsum.photos/200/300?grayscale");
+      }
+      .img4 {
+        content: url("https://picsum.photos/200/300/");
+      }
+      .img5 {
+        content: url("https://picsum.photos/200/300.jpg");
+      }
+
+      img {
+        margin: 10px;
+        border: 5px solid #555;
+        width: 10%;
+        cursor: pointer;
+      }
+
+      .flex {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 700px;
+        margin: auto;
+      }
+
+      .selected {
+        border: 5px solid rgb(0, 195, 255);
+      }
+
+      p {
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: bold;
+      }
+
+      button {
+        margin: 20px;
+        padding: 10px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+      }
+
+      #buttons {
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
     <main>
-      <!-- solution start -->
-      
-      <!-- solution end -->
+      <h3 id="h">Please click on the identical tiles to verify that you are not a robot.</h3>
+      <div class="flex" id="image-container"></div>
+
+      <div id="buttons">
+        <!-- Buttons will be injected here -->
+      </div>
+
+      <p id="para"></p>
     </main>
-    <script src="./script.js"></script>
+
+    <script>
+      const imagesData = [
+        { id: 'img1', className: 'img1' },
+        { id: 'img2', className: 'img2' },
+        { id: 'img3', className: 'img3' },
+        { id: 'img4', className: 'img4' },
+        { id: 'img5', className: 'img5' },
+      ];
+
+      const container = document.getElementById('image-container');
+      const message = document.getElementById('h');
+      const para = document.getElementById('para');
+      const buttonsDiv = document.getElementById('buttons');
+
+      let selectedIndices = [];
+
+      // Utility to shuffle array
+      function shuffle(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      // Initialize and render images
+      function init() {
+        // Reset state
+        selectedIndices = [];
+        message.textContent = 'Please click on the identical tiles to verify that you are not a robot.';
+        para.textContent = '';
+        buttonsDiv.innerHTML = '';
+
+        // Choose one random image to duplicate
+        const duplicateIndex = Math.floor(Math.random() * imagesData.length);
+        const duplicateImage = imagesData[duplicateIndex];
+
+        // Build 6-image array with one duplicate
+        let imagesToShow = [...imagesData];
+        imagesToShow.push(duplicateImage); // duplicate one image
+
+        // Shuffle images
+        shuffle(imagesToShow);
+
+        // Clear container
+        container.innerHTML = '';
+
+        // Render images with unique data-index for identification
+        imagesToShow.forEach((imgData, idx) => {
+          const img = document.createElement('img');
+          img.className = imgData.className;
+          img.dataset.imgid = imgData.id; // to identify identical images
+          img.dataset.index = idx; // unique per image
+          img.addEventListener('click', onImageClick);
+          container.appendChild(img);
+        });
+      }
+
+      function onImageClick(e) {
+        const img = e.target;
+        const index = img.dataset.index;
+
+        // If already selected this image, ignore (no double clicking same tile)
+        if (selectedIndices.includes(index)) return;
+
+        // Limit selection to max 2 images
+        if (selectedIndices.length >= 2) return;
+
+        // Mark selected visually and in state
+        img.classList.add('selected');
+        selectedIndices.push(index);
+
+        // Show Reset button if not visible
+        if (!document.getElementById('reset')) showResetButton();
+
+        // If exactly 2 images selected, show Verify button
+        if (selectedIndices.length === 2) showVerifyButton();
+      }
+
+      function showResetButton() {
+        if (document.getElementById('reset')) return; // already visible
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'reset';
+        resetBtn.textContent = 'Reset';
+        resetBtn.addEventListener('click', onReset);
+        buttonsDiv.appendChild(resetBtn);
+      }
+
+      function showVerifyButton() {
+        if (document.getElementById('verify')) return; // already visible
+
+        const verifyBtn = document.createElement('button');
+        verifyBtn.id = 'verify';
+        verifyBtn.textContent = 'Verify';
+        verifyBtn.addEventListener('click', onVerify);
+        buttonsDiv.appendChild(verifyBtn);
+      }
+
+      function onReset() {
+        // Clear selection
+        selectedIndices = [];
+        para.textContent = '';
+        message.textContent = 'Please click on the identical tiles to verify that you are not a robot.';
+
+        // Remove selection styles
+        document.querySelectorAll('img.selected').forEach(img => img.classList.remove('selected'));
+
+        // Remove buttons
+        buttonsDiv.innerHTML = '';
+      }
+
+      function onVerify() {
+        // Get clicked images by selectedIndices
+        const imgs = selectedIndices.map(idx => container.querySelector(`img[data-index="${idx}"]`));
+        if (imgs.length !== 2) return;
+
+        // Compare their imgid data attribute
+        if (imgs[0].dataset.imgid === imgs[1].dataset.imgid) {
+          para.textContent = 'You are a human. Congratulations!';
+        } else {
+          para.textContent = "We can't verify you as a human. You selected the non-identical tiles.";
+        }
+
+        // Remove Verify button after click
+        const verifyBtn = document.getElementById('verify');
+        if (verifyBtn) verifyBtn.remove();
+      }
+
+      // Initialize on page load
+      window.onload = init;
+    </script>
   </body>
 </html>
